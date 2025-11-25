@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified Video Editing as Temporal Reasoner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --background-color: #0a0a0a;
+            --text-color: #cccccc;
+            --heading-color: #ffffff;
+            --accent-color: #2563eb;
+            --container-width: 1200px;
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.7;
+            margin: 0;
+            padding: 0;
+            font-size: 16px;
+        }
+
+        .container {
+            max-width: var(--container-width);
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 60px 0 40px;
+        }
+
+        header h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 800;
+            color: var(--heading-color);
+            margin-bottom: 0.2em;
+            letter-spacing: -1px;
+            line-height: 1.1;
+        }
+
+        /* 大屏上标题强制单行显示，避免自动换行 */
+        @media (min-width: 900px) {
+            header h1 {
+                white-space: nowrap;
+            }
+        }
+
+        section {
+            padding: 60px 0;
+            border-top: 1px solid #1a1a1a;
+        }
+        
+        section:first-of-type {
+            border-top: none;
+        }
+        
+        h2.section-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            text-align: center;
+            color: var(--heading-color);
+            margin-bottom: 40px;
+        }
+
+        h4 {
+            display: none;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            /* Stretch items so each row has equal height and prompts align */
+            align-items: stretch;
+        }
+
+        @media (max-width: 1024px) {
+            .gallery {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .gallery {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .gallery-item {
+            background: transparent; 
+            border: none;
+            padding: 0;
+            /* Ensure prompt is at the bottom */
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .comparison-grid {
+            display: grid;
+            gap: 4px;
+            align-items: start;
+            width: 100%;
+            /* Let video area grow so prompt sticks to bottom of card */
+            flex: 1 1 auto;
+        }
+        
+        .layout-horizontal {
+            grid-template-columns: 1fr;
+        }
+        
+        .comparison-grid.layout-vertical {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            min-height: clamp(280px, 32vw, 420px);
+            align-items: stretch;
+        }
+
+        .comparison-grid.layout-vertical .video-wrapper {
+            height: 100%;
+            display: flex;
+        }
+
+        .comparison-grid.layout-vertical video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            line-height: 0; /* Remove bottom spacing for inline-block video */
+        }
+
+        video {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            display: block;
+            background: #000;
+        }
+
+        .prompt {
+            background-color: #111;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            border: 1px solid #2a2a2a;
+            color: #ccc;
+            text-align: center;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .prompt b {
+            color: #fff;
+        }
+
+        .badge {
+            position: absolute;
+            top: 10px;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            z-index: 2;
+            pointer-events: none;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .badge-input {
+            left: 10px;
+        }
+        .badge-output {
+            right: 10px;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <header>
+        <h1>Unified Video Editing as Temporal Reasoner</h1>
+    </header>
+
+    <main>
+            <!-- Length Extrapolation Block -->
+            <section id="length-extrapolation">
+                <h2 class="section-title">Length Extrapolation</h2>
+                <p style="text-align: center; max-width: 800px; margin: 0 auto 40px; color: var(--text-color);">
+                    Trained on only <b>50k</b> data (33 frames), this following examples shows multi-shot editing and robust 4&times; length generalization.
+                </p>
+                
+                <div class="gallery" style="grid-template-columns: repeat(3, 1fr);">
+                     <div class="gallery-item">
+                        <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls>
+                                <source src="./videos/length_exploration/gen_change_object_001_input.mp4" type="video/mp4">
+                            </video>
+                        </div>
+                        <div class="prompt"><b>Input</b></div>
+                    </div>
+                    <div class="gallery-item">
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output 1</span>
+                            <video autoplay muted loop playsinline controls>
+                                <source src="./videos/length_exploration/gen_change_object_001_edit.mp4" type="video/mp4">
+                            </video>
+                        </div>
+                        <div class="prompt"><b>Replace brown tracksuit with a bright red leather jacket and black leggings</b></div>
+                    </div>
+                    <div class="gallery-item">
+                        <div class="video-wrapper">
+                            <span class="badge badge-output">Output 2</span>
+                            <video autoplay muted loop playsinline controls>
+                                <source src="./videos/length_exploration/gen_change_object_002_edit.mp4" type="video/mp4">
+                            </video>
+                        </div>
+                        <div class="prompt"><b>Replace the brown tracksuit into a beige wool set</b></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Reasoning Visualization Block -->
+            <section id="reasoning-visualization">
+                <h2 class="section-title">Seeing, Reasoning, Editing</h2>
+                <p style="text-align: center; max-width: 800px; margin: 0 auto 40px; color: var(--text-color);">
+                    VideoCoF adopts a <b>"seeing, reasoning, editing"</b> approach, where it first reasons about the editing region before implementing the corresponding edit.
+                </p>
+                
+                <div class="gallery" style="grid-template-columns: repeat(3, 1fr);">
+                    <!-- 023_2 (Left Input, Right Reasoning -> Side-by-Side -> layout-vertical) -->
+                    <div class="gallery-item">
+                        <div class="comparison-grid layout-horizontal">
+                            <div class="video-wrapper">
+                                <span class="badge badge-input">Input</span>
+                                <video autoplay muted loop playsinline controls>
+                                    <source src="./videos/reasoning_vis/gen_local_style_transfer_024_input_extended.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                            <div class="video-wrapper">
+                                <span class="badge badge-output">Reasoning</span>
+                                <video autoplay muted loop playsinline controls>
+                                    <source src="./videos/reasoning_vis/gen_local_style_transfer_024_reason_edit.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                        </div>
+                        <div class="prompt"><b>Make the dough on the cutting board crusty and golden as if freshly baked.</b></div>
+                    </div>
+
+                    <!-- 024 (Top Input, Bottom Reasoning -> Stacked -> layout-horizontal) -->
+                    <div class="gallery-item">
+                        <div class="comparison-grid layout-horizontal">
+                            <div class="video-wrapper">
+                                <span class="badge badge-input">Input</span>
+                                <video autoplay muted loop playsinline controls>
+                                    <source src="./videos/reasoning_vis/gen_obj_removal_024_input_extended.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                            <div class="video-wrapper">
+                                <span class="badge badge-output">Reasoning</span>
+                                <video autoplay muted loop playsinline controls>
+                                    <source src="./videos/reasoning_vis/gen_obj_removal_024.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                        </div>
+                        <div class="prompt"><b>Remove the blue credit card with a gradient design and white text on the far right.</b></div>
+                    </div>
+                    
+                    <!-- 032_1 (Top Input, Bottom Reasoning -> Stacked -> layout-horizontal) -->
+                    <div class="gallery-item">
+                        <div class="comparison-grid layout-horizontal">
+                            <div class="video-wrapper">
+                                <span class="badge badge-input">Input</span>
+                                <video autoplay muted loop playsinline controls>
+                                    <source src="./videos/reasoning_vis/gen_grounding_032_1_input_extended.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                            <div class="video-wrapper">
+                                <span class="badge badge-output">Reasoning</span>
+                                <video autoplay muted loop playsinline controls>
+                                    <source src="./videos/reasoning_vis/gen_grounding_032_1.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                        </div>
+                        <div class="prompt"><b>Remove the woman with tattoos wearing beige bra on the left</b></div>
+                    </div>
+                </div>
+            </section>
+
+
+        <!-- Section 1: Object Removal (Horizontal -> Stacked) -->
+        <section id="gallery-rem">
+            <h2 class="section-title">Object Removal</h2>
+            <div class="gallery">
+                <!-- Row 1: 28_1, 26_1, 29_2 -->
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                        <div class="video-wrapper">
+                        <span class="badge badge-input">Input</span>
+                        <video autoplay muted loop playsinline controls>
+                            <source src="./videos/rem/gen_grounding_028_1_input.mp4" type="video/mp4">
+                        </video>
+                    </div>
+                        <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls>
+                                <source src="./videos/rem/gen_grounding_028_1_edit.mp4" type="video/mp4">
+                            </video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Remove the young woman wearing white t-shirt and beige pants on the left</b></div>
+                </div>
+
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls>
+                                <source src="./videos/rem/gen_grounding_026_1_input.mp4" type="video/mp4">
+                            </video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls>
+                                <source src="./videos/rem/gen_grounding_026_1_edit.mp4" type="video/mp4">
+                            </video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Remove the young Black woman in a white bathrobe and polka dot pants sitting on the right</b></div>
+                </div>
+
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls>
+                                <source src="./videos/rem/gen_grounding_029_2_input.mp4" type="video/mp4">
+                            </video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls>
+                                <source src="./videos/rem/gen_grounding_029_2_edit.mp4" type="video/mp4">
+                            </video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Remove the young girl with blonde hair and blue top holding a game controller on the right</b></div>
+                </div>
+
+                <!-- Row 2 -->
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls>
+                                <source src="./videos/rem/gen_grounding_030_1_input.mp4" type="video/mp4">
+                            </video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls>
+                                <source src="./videos/rem/gen_grounding_030_3_edit.mp4" type="video/mp4">
+                            </video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Remove the man wearing a light sweater on the left</b></div>
+                </div>
+
+                 <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls>
+                                <source src="./videos/rem/gen_ID-Delete_018_input.mp4" type="video/mp4">
+                            </video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls>
+                                <source src="./videos/rem/gen_ID-Delete_018_edit.mp4" type="video/mp4">
+                            </video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Remove the young gray donkey standing near the green wheelbarrow to the right.</b></div>
+                </div>
+
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls>
+                                <source src="./videos/rem/gen_grounding_024_1_input.mp4" type="video/mp4">
+                            </video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls>
+                                <source src="./videos/rem/gen_grounding_024_1_edit.mp4" type="video/mp4">
+                            </video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Remove the young man with short black hair wearing black shirt on the left</b></div>
+                </div>
+                <!-- Row 3 -->
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls>
+                                <source src="./videos/rem/gen_ID-Delete_008_input.mp4" type="video/mp4">
+                            </video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls>
+                                <source src="./videos/rem/gen_ID-Delete_008_edit.mp4" type="video/mp4">
+                            </video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Remove the beige CRT computer setup.</b></div>
+                </div>
+
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls>
+                                <source src="./videos/rem/gen_grounding_027_2_input.mp4" type="video/mp4">
+                            </video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls>
+                                <source src="./videos/rem/gen_grounding_027_2_edit.mp4" type="video/mp4">
+                            </video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Remove the girl with dark skin wearing blue cardigan in the background on the right</b></div>
+                </div>
+
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls>
+                                <source src="./videos/rem/gen_obj_removal_046_input.mp4" type="video/mp4">
+                            </video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls>
+                                <source src="./videos/rem/gen_obj_removal_046_edit.mp4" type="video/mp4">
+                            </video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Remove the woman with curly hair, a black top, and a white jacket located on the right.</b></div>
+                </div>
+
+
+        </section>
+
+        <!-- Section 2: Object Addition (Horizontal -> Stacked) -->
+        <section id="gallery-add">
+            <h2 class="section-title">Object Addition</h2>
+            <div class="gallery">
+                <!-- Batch 1 -->
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_ID-Insert_008_original.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_ID-Insert_008_edited.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Add the white Samoyed with a friendly smile, calmly standing and watching the man from the left side of the greenhouse</b></div>
+                </div>
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_obj_addition_005_1_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_obj_addition_005_1_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Add the woman in a floral dress pointing at the balloon on the left.</b></div>
+                </div>
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_obj_addition_009_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_obj_addition_009_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Add the white motor yacht with flags moving steadily across the water, leaving a trailing wake.</b></div>
+                </div>
+
+                <!-- Batch 2 -->
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_obj_addition_025_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_obj_addition_025_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Add the woman with curly afro hair, in a beige and black blazer, slightly to the left and in front of the original woman, facing the camera.</b></div>
+                </div>
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_obj_addition_015_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_obj_addition_015_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Add the makeup brush with a black handle and fluffy brush head moving smoothly along the cheek.</b></div>
+                </div>
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_obj_addition_021_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_obj_addition_021_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Add the brown and white beagle interacting with and drinking from the metallic bowl on the wooden floor.</b></div>
+                </div>
+
+                <!-- Batch 3 -->
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_obj_addition_024_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_obj_addition_024_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Add the brown book with black edges being held steadily in the person’s right hand as if reading.</b></div>
+                </div>
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_ID-Insert_011_original.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_ID-Insert_011_edited.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Add the large gorilla with a muscular build, dark fur, and a stern expression, wearing colorful beach shorts, running towards the camera on the pier.</b></div>
+                </div>
+                 <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_obj_addition_035_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_obj_addition_035_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Add the child with a white shirt and navy blue pants, seated inside the tent with a joyful expression, smiling while facing forward.</b></div>
+                </div>
+                
+                 <!-- Batch 4 -->
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_obj_addition_036_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_obj_addition_036_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Add the man with a beard, tattoos, and yoga attire, seated on a white mat, moving his arms from a forward bend to overhead while positioned centrally on a scenic coastal patch.</b></div>
+                </div>
+                 <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_obj_addition_041_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_obj_addition_041_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Add a blue and white hexagonal-patterned soccer ball positioned near the player’s kicking foot, aligned with the kicking motion.</b></div>
+                </div>
+                 <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_obj_addition_043_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_obj_addition_043_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Add a young woman wearing light shirt and beige trousers,holding the blue game controller to the left engaged in gameplay.</b></div>
+                </div>
+                
+                 <!-- Batch 5 -->
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_obj_addition_044_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_obj_addition_044_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Add a young woman, positioned to the left, mirroring the first person’s attire, standing and facing forward..</b></div>
+                </div>
+                 <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_obj_addition_045_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_obj_addition_045_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Add the fresh, vibrant green lettuce being held up and then dropped onto the plate with tomatoes.</b></div>
+                </div>
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-vertical">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_add_object_005_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/add/gen_add_object_005_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Integrate a transparent, holographic grand piano next to the man.</b></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Object Swap (Horizontal -> Stacked) -->
+        <section id="gallery-swap">
+            <h2 class="section-title">Object Swap</h2>
+            <div class="gallery">
+                 <!-- Batch 1 -->
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-vertical">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/swap/gen_obj_swap_013_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/swap/gen_obj_swap_013_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Swap the beige dress at the torso with a beige cardigan over blue jeans.</b></div>
+                </div>
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-vertical">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/swap/gen_obj_swap_017_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/swap/gen_obj_swap_017_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Swap the sunflower at the person's left hand with red roses.</b></div>
+                </div>
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-vertical">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/swap/gen_obj_swap_021_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/swap/gen_obj_swap_021_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Swap the plain black tank top at the upper body with a patterned black dress.</b></div>
+                </div>
+
+                <!-- Batch 2 -->
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/swap/gen_obj_swap_032_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/swap/gen_obj_swap_032_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Replace the pile of crab legs in the transparent container with whole live crabs.</b></div>
+                </div>
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/swap/gen_change_material_103_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/swap/gen_change_material_103_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b> Transform the person's hair into dynamic, realistic flames. </b></div>
+                </div>
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-vertical">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/swap/gen_obj_swap_049_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/swap/gen_obj_swap_049_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Swap the white pants with light blue jeans.</b></div>
+                </div>
+                
+                 <!-- Batch 3 -->
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/swap/gen_change_color_090_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/swap/gen_change_color_090_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Change the shirt from white to black.</b></div>
+                </div>
+                 <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/swap/gen_obj-swap-multi-instance_027_2_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/swap/gen_obj-swap-multi-instance_027_2_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Replace the teacher wearing a light-brown blazer in the foreground with a young boy wearing a green hoodie.</b></div>
+                </div>
+
+                 <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/swap/gen_obj_swap_048_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/swap/gen_obj_swap_048_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Swap the old man with long white hair and a blue checkered shirt at the left side of the frame with a woman with curly brown hair and a denim shirt.</b></div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Section 4: Local Style Transfer (Vertical -> Side-by-Side) -->
+        <section id="gallery-style">
+            <h2 class="section-title">Local Style Transfer</h2>
+            <div class="gallery">
+                
+                 <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/local_style/gen_change_material_100_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/local_style/gen_change_material_100_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Change the turtle's shell material to crystal, reflecting light beautifully</b></div>
+                </div>
+                
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/local_style/gen_change_material_104_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/local_style/gen_change_material_104_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Change tree bark to look like it's made of crystal</b></div>
+                </div>
+
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/local_style/gen_local_style_transfer_002_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/local_style/gen_local_style_transfer_002_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Make the paper bag at the right of the tissue flower bags and below the bouquet brown and crinkly.</b></div>
+                </div>
+                
+                 <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/local_style/gen_local_style_transfer_006_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/local_style/gen_local_style_transfer_006_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Make the ketchup bottle to the right of the BBQ sauce bottle violet color.</b></div>
+                </div>
+                
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/local_style/gen_local_style_transfer_010_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/local_style/gen_local_style_transfer_010_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Make the pomegranate at the right side of the basket lavender color.</b></div>
+                </div>
+                
+                <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/local_style/gen_local_style_transfer_022_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/local_style/gen_local_style_transfer_022_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Make the pigeon at the left side Cadet Blue.</b></div>
+                </div>
+                
+                 <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/local_style/gen_local_style_transfer_044_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/local_style/gen_local_style_transfer_044_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Make the rabbit at the adult's hands copper color.</b></div>
+                </div>
+
+                 <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/local_style/gen_local_style_transfer_046_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/local_style/gen_local_style_transfer_046_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Remove the pedestrian warning sign above, and replace the yellow “SCHOOL” sign below with a Kelly Green traffic sign showing “Kelly Green.”</b></div>
+                </div>
+
+                 <div class="gallery-item">
+                    <div class="comparison-grid layout-horizontal">
+                         <div class="video-wrapper">
+                            <span class="badge badge-input">Input</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/local_style/gen_local_style_transfer_048_input.mp4" type="video/mp4"></video>
+                        </div>
+                         <div class="video-wrapper">
+                            <span class="badge badge-output">Output</span>
+                            <video autoplay muted loop playsinline controls><source src="./videos/local_style/gen_local_style_transfer_048_edit.mp4" type="video/mp4"></video>
+                        </div>
+                    </div>
+                    <div class="prompt"><b>Make the largest cup on the right white and smooth.</b></div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const wrappers = document.querySelectorAll('.comparison-grid');
+    
+    wrappers.forEach(wrapper => {
+        const videos = wrapper.querySelectorAll('video');
+        if(videos.length === 2) {
+            const v1 = videos[0];
+            const v2 = videos[1];
+            
+            const playBoth = () => {
+                if(v1.paused) v1.play().catch(e => {});
+                if(v2.paused) v2.play().catch(e => {});
+            };
+            
+            const pauseBoth = () => {
+                if(!v1.paused) v1.pause();
+                if(!v2.paused) v2.pause();
+            };
+
+            // Sync play/pause
+            v1.addEventListener('play', playBoth);
+            v2.addEventListener('play', playBoth);
+            v1.addEventListener('pause', pauseBoth);
+            v2.addEventListener('pause', pauseBoth);
+            
+            // Sync time periodically to prevent loop issues
+            // Simple sync: if drift > 0.1s, align
+            v1.addEventListener('timeupdate', () => {
+                if(Math.abs(v1.currentTime - v2.currentTime) > 0.2 && !v2.seeking) {
+                    v2.currentTime = v1.currentTime;
+                }
+            });
+        }
+    });
+});
+</script>
+</body>
+</html>
