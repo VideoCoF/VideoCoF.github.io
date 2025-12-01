@@ -47,6 +47,70 @@
             line-height: 1.1;
         }
 
+        .authors {
+            margin-top: 20px;
+            font-size: 1.25rem;
+            color: var(--text-color);
+        }
+        
+        .affiliations {
+            margin-top: 10px;
+            font-size: 1rem;
+            color: #888;
+        }
+        
+        .affiliations span {
+            margin: 0 15px;
+        }
+
+        .links {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            color: #fff;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .btn i {
+            margin-right: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .btn-primary { 
+            background-color: var(--accent-color); 
+            border: 1px solid transparent;
+        }
+        .btn-primary:hover { background-color: #1d4ed8; }
+
+        .btn-dark { 
+            background-color: #1f2937; 
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .btn-dark:hover { background-color: #374151; }
+
+        .btn-yellow { 
+            background-color: #ca8a04; 
+            border: 1px solid transparent;
+        }
+        .btn-yellow:hover { background-color: #a16207; }
+
         /* 大屏上标题强制单行显示，避免自动换行 */
         @media (min-width: 900px) {
             header h1 {
@@ -197,6 +261,20 @@
 
     <header>
         <h1>Unified Video Editing as Temporal Reasoner</h1>
+        <div class="authors">
+            Xiangpeng Yang<sup>1</sup>, Ji Xie<sup>2</sup>, Yiyuan Yang<sup>1</sup>, Yan Huang<sup>1</sup>, Min Xu<sup>1</sup>, Qiang Xue<sup>1</sup>
+        </div>
+        <div class="affiliations">
+            <span><sup>1</sup>University of Technology Sydney</span>
+            <span><sup>2</sup>Zhejiang University</span>
+        </div>
+        <div class="links">
+            <a href="#" class="btn btn-primary"><i class="fas fa-file-pdf"></i> Paper</a>
+            <a href="#" class="btn btn-dark"><i class="fas fa-book-open"></i> ArXiv</a>
+            <a href="#" class="btn btn-dark"><i class="fab fa-github"></i> Code</a>
+            <a href="#" class="btn btn-yellow"><i class="fas fa-robot"></i> Models</a>
+            <a href="#" class="btn btn-dark"><i class="fas fa-database"></i> Data</a>
+        </div>
     </header>
 
     <main>
