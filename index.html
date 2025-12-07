@@ -346,6 +346,16 @@
     </header>
 
     <main>
+        <!-- Video Introduction Section -->
+        <section id="video-intro">
+            <h2 class="section-title">A Short Video Introduction</h2>
+            <div style="text-align: center; max-width: 1000px; margin: 0 auto;">
+                 <video autoplay muted loop playsinline controls style="width: 100%; height: auto; border-radius: 12px;">
+                     <source src="assets/VideoCoF_720p.mp4" type="video/mp4">
+                 </video>
+            </div>
+        </section>
+
         <!-- Abstract Section -->
         <section id="abstract">
             <h2 class="section-title">Abstract</h2>
@@ -371,10 +381,15 @@
                 </div>
                 
                 <p>
-                    Current video editing methods typically follow two paths: <span class="text-highlight">expert models</span>, which rely on external masks for precision but sacrifice unification, and <span class="text-highlight">unified in-context learning models</span>, which are mask-free but often struggle with spatial accuracy due to the lack of explicit cues. This creates a fundamental trade-off: precision vs. unification.
+                    Current video editing methods typically follow two paths:<br>
+                    (1) <span class="text-highlight">expert models</span>, which rely on external masks for precision but sacrifice unification;<br>
+                    (2) <span class="text-highlight">unified in-context learning models</span>, which are mask-free but often struggle with spatial accuracy due to the lack of explicit cues.
                 </p>
                 <p>
                     This raises a critical question: <strong>Can we maintain the precision of expert models and the unification of in-context models without the mask dependency?</strong>
+                </p>
+                <p>
+                    To resolve this conflict, we propose <span class="text-highlight">VideoCoF</span>, a Chain-of-Frames approach that predicts <span class="text-highlight">reasoning tokens</span> (edit-region latents) before generating the target video tokens, thereby removing the need for user-provided masks while achieving precise instruction-to-region alignment.
                 </p>
             </div>
         </section>
@@ -886,7 +901,7 @@
                     <div class="prompt"><b>Replace the white jacket worn by the young man with a beard on the left with a black leather jacket.</b></div>
                 </div>
                 <div class="gallery-item">
-                    <div class="comparison-grid layout-vertical">
+                    <div class="comparison-grid layout-horizontal">
                          <div class="video-wrapper">
                             <span class="badge badge-input">Input</span>
                             <video autoplay muted loop playsinline controls><source src="./videos/swap/gen_grounding_028_1_input.mp4" type="video/mp4"></video>
@@ -896,7 +911,7 @@
                             <video autoplay muted loop playsinline controls><source src="./videos/swap/gen_grounding_028_1_edit.mp4" type="video/mp4"></video>
                         </div>
                     </div>
-                    <div class="prompt"><b>Replace the white t-shirt worn by the young woman wearing white t-shirt and beige pants on the left with a light blue blouse.</b></div>
+                    <div class="prompt"><b>Replace the white t-shirt worn by the young woman on the left with a light blue blouse.</b></div>
                 </div>
                 <div class="gallery-item">
                     <div class="comparison-grid layout-horizontal">
