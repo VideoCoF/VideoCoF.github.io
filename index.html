@@ -329,6 +329,26 @@
             right: 10px;
         }
 
+        .conference-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 22px;
+            border-radius: 999px;
+            font-size: .95rem;
+            font-weight: 700;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            color: #fff;
+            box-shadow: 0 4px 24px rgba(245,158,11,.5);
+            margin: 10px 0 16px;
+        }
+        .highlight-star {
+            font-size: .9em;
+            opacity: .9;
+        }
+
     </style>
 </head>
 <body>
@@ -348,6 +368,9 @@
         <div class="affiliations">
             <span><sup>1</sup>University of Technology Sydney</span>
             <span><sup>2</sup>Zhejiang University</span>
+        </div>
+        <div style="text-align: center; margin: 18px 0;">
+            <span style="display: inline-block; padding: 10px 28px; border: 2px solid #d97706; border-radius: 8px; font-size: 1.3rem; font-weight: 600; color: #f59e0b; letter-spacing: 0.03em;">CVPR 2026 Highlight</span>
         </div>
         <div class="links">
             <a href="https://huggingface.co/papers/2512.07469" class="btn btn-primary"><i class="fas fa-file-pdf"></i> Daily Paper</a>
@@ -1168,7 +1191,7 @@
             <h2 class="section-title">Citation</h2>
             <div class="abstract-card glass">
                 <pre style="text-align: left; overflow-x: auto;"><code>@article{yang2025videocof,
-                title={Unified Video Editing with Temporal Reasoner},
+                title={VideoCoF: Unified Video Editing with Temporal Reasoner},
                 author={Yang, Xiangpeng and Xie, Ji and Yang, Yiyuan and Huang, Yan and Xu, Min and Wu, Qiang},
                 journal={arXiv preprint arXiv:2512.07469},
                 year={2025}
